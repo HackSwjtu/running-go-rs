@@ -17,9 +17,7 @@ p-macro = "0.2.0"
 itertools = "0.7"
 uuid = "0.6"
 maplit = "1.0"
-time = "0.1"
 chrono = "0.4"
-datetime = "0.4"
 
 [features]
 default = ["uuid/v4"]

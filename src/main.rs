@@ -25,9 +25,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
-extern crate time;
 extern crate uuid;
-extern crate datetime;
 
 use std::f64::consts::PI;
 use std::slice::SliceConcatExt;
@@ -40,9 +38,8 @@ use reqwest::{Client, Request};
 use reqwest::header::*;
 use itertools::Itertools;
 use uuid::Uuid;
-use chrono::NaiveDate;
-use time::Duration;
 use json::JsonValue;
+use chrono::{FixedOffset, TimeZone};
 
 #[derive(Default, Debug)]
 struct Device {
@@ -337,9 +334,11 @@ impl GPSRecord {
     }
 
     pub fn to_json(&self, flag: u64) -> JsonValue {
-        datetime::LocalDateTime
-        let time = NaiveDate::from_timestamp(self.time, self.time);
-        let time_formatted = time.format("%Y-%m-%d %H:%M:%S").to_string();
+        let time_zone = FixedOffset::east(8 * 3600);
+        let time_format = time_zone
+            .timestamp(self.time as i64 / 1000, 0)
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string();
 
         object! {
             "id" => self.id,
@@ -350,7 +349,7 @@ impl GPSRecord {
             "totalTime" => self.sum_time.round() as u32,
             "speed" => self.speed,
             "avgSpeed" => self.avg_speed,
-            "gainTime" => time_formatted,
+            "gainTime" => time_format,
             "locType" => 61,
             "radius" => 180,
             "type" => 1,
@@ -524,7 +523,7 @@ fn validate(text: &str) -> Result<JsonValue, Error> {
 }
 
 fn rand_near(base: u32, err: u32) -> u32 {
-    base + (err * (rand::thread_rng().next_f64() * 2.0 - 1.0)) as u32
+    base + (err * (rand::thread_rng().next_f64() * 2.0 - 1.0) as u32)
 }
 
 fn rand_near_f64(base: f64, err: f64) -> f64 {
