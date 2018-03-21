@@ -45,8 +45,8 @@ fn main() {
     };
 
     let user = User {
-        username: "2017040505323".into(),
-        password: "505323".into(),
+        username: "username".into(),
+        password: "password".into(),
         ..Default::default()
     };
 
