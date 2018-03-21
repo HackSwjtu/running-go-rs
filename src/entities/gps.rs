@@ -65,6 +65,9 @@ impl GPSRecord {
             sum_time += duration / 1000.0;
         }
 
+        records.first_mut().unwrap().point_type = 5;
+        records.last_mut().unwrap().point_type = 6;
+
         records
     }
 
