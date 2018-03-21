@@ -29,7 +29,7 @@ impl Vector {
         }
     }
 
-    pub fn fuzzle(&self, err: f64) -> Vector {
+    pub fn fuzz(&self, err: f64) -> Vector {
         Vector {
             x: rand_near_f64(self.x, err),
             y: rand_near_f64(self.y, err),

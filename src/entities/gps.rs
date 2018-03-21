@@ -41,7 +41,9 @@ impl GPSRecord {
             let distance = speed * duration / 1000.0;
 
             let target_point = vectors[curr_point_idx];
-            curr_pos = curr_pos.step_toward(target_point, distance).fuzzle(FUZZLE_ERR);
+            curr_pos = curr_pos
+                .step_toward(target_point, distance)
+                .fuzz(FUZZLE_ERR);
             if curr_pos.distance_to(target_point) < 5.0 {
                 curr_point_idx += 1;
             }

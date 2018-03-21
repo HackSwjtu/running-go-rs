@@ -5,13 +5,13 @@ pub const MD5_SIGN_SALT: &'static str = "&wh2016_swcampus";
 pub const MD5_SIGN_SALT_RUN: &'static str = "&ODJw#h03b_0EaV";
 
 pub const AVG_SPEED: f64 = 3.0;
-pub const SPEED_ERR: f64 = 2.0;
+pub const SPEED_ERR: f64 = 1.0;
 pub const SPAMLE_TIME: f64 = 6.0;
 pub const SPAMLE_TIME_ERR: f64 = 1.0;
-pub const CALORIE: u32 = 150;
+pub const CALORIE: u32 = 200;
 pub const CALORIE_ERR: u32 = 70;
 pub const STEP_CNT_PER_10S: u32 = 15;
-pub const STEP_CNT_PER_10S_ERR: u32 = 7;
+pub const STEP_CNT_PER_10S_ERR: u32 = 4;
 pub const STEP_CNT_PER_MIN: u32 = 60;
 pub const STEP_CNT_PER_MIN_ERR: u32 = 10;
 pub const AVG_DIFF: f64 = 24.0;
