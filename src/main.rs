@@ -27,6 +27,7 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate uuid;
 
+use std::iter::once;
 use std::f64::consts::PI;
 use std::slice::SliceConcatExt;
 use std::collections::{BTreeMap, HashMap};
@@ -276,16 +277,12 @@ struct GPSRecord {
 }
 
 impl GPSRecord {
-    pub fn plan(
-        start_time: u64,
-        start_pos: GeoPoint,
-        distance: u32,
-        five_points: &Vec<FivePoint>,
-    ) -> Vec<Self> {
+    pub fn plan(start_time: u64, route_points: &Vec<GeoPoint>, distance: u32) -> Vec<Self> {
         let mut records = Vec::new();
-        let mut vectors: Vec<Vector> = five_points
+        let start_pos = route_points.last().unwrap().clone();
+        let mut vectors: Vec<Vector> = route_points
             .iter()
-            .map(|p| p.pos.get_offset_of(start_pos))
+            .map(|p| p.get_offset_of(start_pos))
             .collect();
         let mut curr_id = 0;
         let mut curr_time = start_time;
@@ -293,23 +290,16 @@ impl GPSRecord {
         let mut sum_time = 0.0;
         let mut sum_dis = 0.0;
 
-        while sum_dis < distance as f64 || vectors.len() > 0 {
+        while sum_dis < distance as f64 {
             let speed = rand_near_f64(AVG_SPEED, SPEED_ERR);
             let duration = rand_near_f64(SPAMLE_TIME * 1000.0, SPAMLE_TIME_ERR * 1000.0);
             let distance = speed * duration / 1000.0;
 
-            if vectors.len() > 0 {
-                // Towards point
-                let target = vectors.last().unwrap();
-                curr_pos = curr_pos.step_toward(*target, distance).fuzzle();
-                if curr_pos.distance_to(*target) < 5.0 {
-                    vectors.pop();
-                }
-            } else {
-                // Towards north
-                curr_pos = curr_pos
-                    .step_toward(Vector { x: 0.0, y: 10000.0 }, distance)
-                    .fuzzle();
+            assert!(vectors.len() > 0);
+            let target = vectors.last().unwrap();
+            curr_pos = curr_pos.step_toward(*target, distance).fuzzle();
+            if curr_pos.distance_to(*target) < 5.0 {
+                vectors.pop();
             }
 
             let speed_weird = (50.0 * sum_time) / (3.0 * sum_dis);
@@ -361,7 +351,6 @@ impl GPSRecord {
 struct RunRecord {
     flag: u64,
     uuid: String,
-    start_pos: GeoPoint,
     sel_distance: u32,
     distance: u32,
     five_points: Vec<FivePoint>,
@@ -376,13 +365,13 @@ impl RunRecord {
     pub fn plan(
         flag: u64,
         uuid: &String,
-        start_pos: GeoPoint,
         sel_distance: u32,
         distance: u32,
+        route_points: &Vec<GeoPoint>,
         five_points: &Vec<FivePoint>,
         start_time: u64,
     ) -> Self {
-        let gps_records = GPSRecord::plan(start_time, start_pos, distance, five_points);
+        let gps_records = GPSRecord::plan(start_time, route_points);
         let end_time = gps_records.last().unwrap().time + 5000;
         let step_records = StepRecord::rand(start_time, end_time);
         let speed_records = SpeedRecord::rand(start_time, end_time);
@@ -390,7 +379,6 @@ impl RunRecord {
         RunRecord {
             flag,
             uuid: uuid.clone(),
-            start_pos,
             sel_distance,
             distance,
             five_points: five_points.to_vec(),
@@ -693,6 +681,33 @@ impl App {
             .collect()
     }
 
+    pub fn plan_route(
+        &mut self,
+        start_pos: GeoPoint,
+        five_points: Vec<FivePoint>,
+        apikey: String,
+    ) -> Result<Vec<GeoPoint>, Error> {
+        let mut routes = Vec::new();
+
+        for (prev, next) in once(start_pos)
+            .chain(five_points.iter().map(|p| p.pos))
+            .chain(once(start_pos.offset(Vector{})))
+            .tuple_windows()
+        {
+            let res = self.client
+                .get("http://api.map.baidu.com/direction/v2/riding")
+                .query(&[
+                    ("origin", format!("{:.6},{:.6}", prev.lat, prev.lon)),
+                    ("destination", format!("{:.6},{:.6}", next.lat, next.lon)),
+                    ("ak", apikey.clone()),
+                ])
+                .send()?
+                .text()?;
+        }
+
+        Ok(routes)
+    }
+
     pub fn start_validate(&mut self, uuid: &String) -> Result<Captcha, Error> {
         let res = self.client
             .get("https://gxapp.iydsj.com/api/v20/security/geepreprocess")
@@ -820,7 +835,8 @@ impl From<json::Error> for Error {
 }
 
 fn main() {
-    let API_KEY = "78c7d1e23f8a0d453338d2f9cdabbbf7".to_string();
+    let API_KEY_CAPTCHA = "78c7d1e23f8a0d453338d2f9cdabbbf7".to_string();
+    let API_KEY_BAIDU = "hzP5rHZij3hvkSYFHxeApkPBj9xboscl".to_string();
 
     let device = Device {
         imei: "".into(),
@@ -855,9 +871,12 @@ fn main() {
 
     p!(five_points);
 
+    let route_points = app.plan_route(start_pos, five_points, API_KEY_BAIDU)
+        .unwrap();
+
     let captcha = app.start_validate(&uuid).unwrap();
 
-    let captcha_result = app.anti_test(&captcha, API_KEY).unwrap();
+    let captcha_result = app.anti_test(&captcha, API_KEY_CAPTCHA).unwrap();
 
     p!(captcha);
     p!(captcha_result);
@@ -867,9 +886,9 @@ fn main() {
     let record = RunRecord::plan(
         flag,
         &uuid,
-        start_pos,
         sel_distance,
         sel_distance + 100,
+        &route_points,
         &five_points,
         start_time,
     );
