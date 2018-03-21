@@ -14,6 +14,7 @@ itertools = "0.7"
 uuid = "0.6"
 maplit = "1.0"
 chrono = "0.4"
+retry = "0.4"
 
 [features]
 default = ["uuid/v4"]

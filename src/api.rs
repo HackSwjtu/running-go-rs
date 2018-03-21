@@ -193,7 +193,7 @@ impl Api {
         })
     }
 
-    pub fn baidu_get_path(
+    fn baidu_get_path(
         &mut self,
         orig: GeoPoint,
         dest: GeoPoint,

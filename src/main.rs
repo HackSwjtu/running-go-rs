@@ -17,6 +17,7 @@ extern crate md5;
 // extern crate p_macro;
 extern crate rand;
 extern crate reqwest;
+extern crate retry;
 extern crate uuid;
 
 mod api;
@@ -26,12 +27,21 @@ mod utils;
 mod entities;
 
 use uuid::Uuid;
+use retry::retry;
 
 use crate::entities::*;
 use crate::utils::*;
+use crate::error::Error;
 use crate::api::Api;
 
 fn main() {
+    match run() {
+        Ok(()) => println!("Wow! Successful!"),
+        Err(err) => eprintln!("Error occured: {:?}", err),
+    }
+}
+
+fn run() -> Result<(), Error> {
     let API_KEY_CAPTCHA = "API KEY".into();
     let API_KEY_BAIDU = "API KEY".into();
 
@@ -62,18 +72,22 @@ fn main() {
 
     let mut api = Api::new(device, user);
 
-    api.login().unwrap();
+    api.login()?;
 
-    let five_points = api.fetch_points(start_pos, sel_distance).unwrap();
+    let five_points = api.fetch_points(start_pos, sel_distance)?;
 
-    let route_plan = api.plan_route(start_pos, &five_points, sel_distance, &API_KEY_BAIDU)
-        .unwrap();
+    let route_plan = api.plan_route(start_pos, &five_points, sel_distance, &API_KEY_BAIDU)?;
 
-    let captcha = api.start_validate(&uuid).unwrap();
+    let captcha = api.start_validate(&uuid)?;
 
-    let captcha_result = api.anti_test(&captcha, &API_KEY_CAPTCHA).unwrap();
+    let captcha_result = retry(
+        5,
+        500,
+        || api.anti_test(&captcha, &API_KEY_CAPTCHA),
+        |res| res.is_ok(),
+    ).map_err(|_| Error::Api("Captcha retried too many time".into()))??;
 
-    api.post_validate(&uuid, &captcha_result).unwrap();
+    api.post_validate(&uuid, &captcha_result)?;
 
     let record = RunRecord::plan(
         flag,
@@ -84,9 +98,9 @@ fn main() {
         start_time,
     );
 
-    api.post_record(&record).unwrap();
+    api.post_record(&record)?;
 
-    api.logout().unwrap();
+    api.logout()?;
 
-    println!("Wow! Successful!")
+    Ok(())
 }
