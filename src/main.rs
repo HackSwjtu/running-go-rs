@@ -279,7 +279,7 @@ impl GPSRecord {
     pub fn plan(
         start_time: u64,
         start_pos: GeoPoint,
-        distance: f64,
+        distance: u32,
         five_points: &Vec<FivePoint>,
     ) -> Vec<Self> {
         let mut records = Vec::new();
@@ -293,7 +293,7 @@ impl GPSRecord {
         let mut sum_time = 0.0;
         let mut sum_dis = 0.0;
 
-        while sum_dis < distance || vectors.len() > 0 {
+        while sum_dis < distance as f64 || vectors.len() > 0 {
             let speed = rand_near_f64(AVG_SPEED, SPEED_ERR);
             let duration = rand_near_f64(SPAMLE_TIME * 1000.0, SPAMLE_TIME_ERR * 1000.0);
             let distance = speed * duration / 1000.0;
@@ -359,10 +359,11 @@ impl GPSRecord {
 
 #[derive(Debug)]
 struct RunRecord {
+    flag: u64,
     uuid: String,
     start_pos: GeoPoint,
     sel_distance: u32,
-    distance: f64,
+    distance: u32,
     five_points: Vec<FivePoint>,
     start_time: u64,
     end_time: u64,
@@ -373,10 +374,11 @@ struct RunRecord {
 
 impl RunRecord {
     pub fn plan(
+        flag: u64,
         uuid: &String,
         start_pos: GeoPoint,
         sel_distance: u32,
-        distance: f64,
+        distance: u32,
         five_points: &Vec<FivePoint>,
         start_time: u64,
     ) -> Self {
@@ -386,6 +388,7 @@ impl RunRecord {
         let speed_records = SpeedRecord::rand(start_time, end_time);
 
         RunRecord {
+            flag,
             uuid: uuid.clone(),
             start_pos,
             sel_distance,
@@ -399,19 +402,35 @@ impl RunRecord {
         }
     }
 
-    pub fn to_json(&self, flag: u64, uid: u32, unid: u32) -> JsonValue {
+    pub fn to_json(&self, uid: u32, unid: u32) -> JsonValue {
         let all_loc_json = JsonValue::Array(
-            self.gps_records.iter().map(|r| r.to_json(flag)).collect(),
+            self.gps_records
+                .iter()
+                .map(|r| r.to_json(self.flag))
+                .collect(),
         ).to_string();
 
         let five_point_json = JsonValue::Array(
-            self.five_points.iter().map(|p| p.to_json(flag)).collect(),
+            self.five_points
+                .iter()
+                .map(|p| p.to_json(self.flag))
+                .collect(),
         ).to_string();
 
-        let speed_records =
-            JsonValue::Array(self.speed_records.iter().map(|r| r.to_json(flag)).collect());
-        let step_records =
-            JsonValue::Array(self.step_records.iter().map(|r| r.to_json(flag)).collect());
+        let speed_records = JsonValue::Array(
+            self.speed_records
+                .iter()
+                .map(|r| r.to_json(self.flag))
+                .collect(),
+        );
+        let step_records = JsonValue::Array(
+            self.step_records
+                .iter()
+                .map(|r| r.to_json(self.flag))
+                .collect(),
+        );
+
+        let sum_time = ((self.end_time - self.start_time) / 1000) as u32;
 
         let mut json = object! {
             "avgStepFreq" => rand_near(STEP_CNT_PER_MIN, STEP_CNT_PER_MIN_ERR),
@@ -420,14 +439,14 @@ impl RunRecord {
             "getPrize" => false,
             "selDistance" => self.sel_distance,
             "selectedUnid" => unid,
-            "speed" => rand_near_f64(AVG_SPEED, SPEED_ERR),
+            "speed" => (50 * sum_time) / (3 * self.distance) * 1000,
             "sportType" => 1,
             "startTime" => self.start_time,
             "status" => 0,
             "stopTime" => self.end_time,
-            "totalDis" => self.distance / 1000.0,
+            "totalDis" => self.distance,
             "totalSteps" => self.step_records.iter().fold(0, |sum, record| sum + record.step_count),
-            "totalTime" => ((self.end_time - self.start_time) / 1000) as u32,
+            "totalTime" => sum_time,
             "uid" => uid,
             "unCompleteReason" => 0,
             "uuid" => self.uuid.clone(),
@@ -450,12 +469,12 @@ impl RunRecord {
         let json_extend = object! {
             "allLocJson" => object! {
                 "allLocJson" => all_loc_json,
-            },
+            }.to_string(),
             "fivePointJson" => object!{
                 "fivePointJson" => five_point_json,
-            },
+            }.to_string(),
             "speedPerTenSec" => speed_records,
-            "stepPerTenSec" => step_records,
+            "stepsPerTenSec" => step_records,
             "isUpload" => false,
             "more" => true,
             "unid" => unid,
@@ -482,8 +501,8 @@ const AVG_SPEED: f64 = 3.0;
 const SPEED_ERR: f64 = 2.0;
 const SPAMLE_TIME: f64 = 6.0;
 const SPAMLE_TIME_ERR: f64 = 1.0;
-const CALORIE: u32 = 300;
-const CALORIE_ERR: u32 = 100;
+const CALORIE: u32 = 150;
+const CALORIE_ERR: u32 = 70;
 const STEP_CNT_PER_10S: u32 = 15;
 const STEP_CNT_PER_10S_ERR: u32 = 7;
 const STEP_CNT_PER_MIN: u32 = 60;
@@ -511,6 +530,11 @@ struct App {
 
 fn compute_sign(map: &BTreeMap<String, String>, salt: &str) -> String {
     let str = map.iter().map(|(k, v)| format!("{}={}", k, v)).join("&");
+    p!("sign", str.clone() + salt);
+    p!(
+        "signature",
+        format!("{:x}", md5::compute(str.clone() + salt))
+    );
     format!("{:x}", md5::compute(str.clone() + salt))
 }
 
@@ -523,7 +547,7 @@ fn validate(text: &str) -> Result<JsonValue, Error> {
 }
 
 fn rand_near(base: u32, err: u32) -> u32 {
-    base + (err * (rand::thread_rng().next_f64() * 2.0 - 1.0) as u32)
+    (base as f64 + (err as f64 * (rand::thread_rng().next_f64() * 2.0 - 1.0))) as u32
 }
 
 fn rand_near_f64(base: f64, err: f64) -> f64 {
@@ -559,12 +583,13 @@ impl App {
         headers.set_raw("appVersion", APP_VERSION);
         headers.set_raw("CustomDeviceId", self.device.custom_id.clone());
         headers.set_raw("DeviceId", self.device.id.clone());
+        headers.set_raw("deviceName", self.device.model.clone());
         headers.set_raw("osType", OS_TYPE);
         headers.set_raw("osVersion", self.device.os_version.clone());
 
         if self.user.token != "" {
             let now = SystemTime::now();
-            let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
+            let since_the_epoch = now.duration_since(UNIX_EPOCH).unwrap();
             let time_stamp = since_the_epoch.as_secs() * 1000
                 + since_the_epoch.subsec_nanos() as u64 / 1_000_000;
 
@@ -742,7 +767,7 @@ impl App {
     }
 
     pub fn post_record(&mut self, record: &RunRecord) -> Result<(), Error> {
-        let data = "";
+        let data = record.to_json(self.user.uid, self.user.unid);
 
         let res = self.client
             .post("https://gxapp.iydsj.com/api/v22/runnings/save/record")
@@ -751,7 +776,19 @@ impl App {
             .send()?
             .text()?;
 
+        p!(res);
+
         let res = validate(&res)?;
+
+        Ok(())
+    }
+
+    pub fn logout(&mut self) -> Result<(), Error> {
+        let res = self.client
+            .post("https://gxapp.iydsj.com/api/v6/user/logout")
+            .headers(self.headers())
+            .send()?
+            .text()?;
 
         Ok(())
     }
@@ -806,9 +843,9 @@ fn main() {
     };
 
     let sel_distance = 2000;
-    let start_time = 1521520225299;
-
+    let start_time = 1521523825299;
     let flag = start_time - rand_near(30 * 60 * 1000, 5 * 60 * 1000) as u64;
+    let uuid = Uuid::new_v4().hyphenated().to_string();
 
     let mut app = App::new(device, user);
 
@@ -816,42 +853,32 @@ fn main() {
 
     let five_points = app.fetch_points(start_pos, sel_distance).unwrap();
 
-    let uuid = Uuid::new_v4().hyphenated().to_string();
+    p!(five_points);
+
+    let captcha = app.start_validate(&uuid).unwrap();
+
+    let captcha_result = app.anti_test(&captcha, API_KEY).unwrap();
+
+    p!(captcha);
+    p!(captcha_result);
+
+    app.post_validate(&uuid, &captcha_result).unwrap();
 
     let record = RunRecord::plan(
+        flag,
         &uuid,
         start_pos,
         sel_distance,
-        sel_distance as f64 + 100.0,
+        sel_distance + 100,
         &five_points,
         start_time,
     );
 
-    p!(record
-        .step_records
-        .iter()
-        .foreach(|r| println!("{}", r.to_json(flag).to_string())));
-    p!(record
-        .speed_records
-        .iter()
-        .foreach(|r| println!("{}", r.to_json(flag).to_string())));
-    p!(record
-        .gps_records
-        .iter()
-        .foreach(|r| println!("{}", r.to_json(flag).to_string())));
-    p!(record.to_json(flag, 123, 8756).to_string());
+    p!(record.to_json(123, 8756).to_string());
 
-    // let captcha = app.start_validate(&uuid).unwrap();
+    app.post_record(&record).unwrap();
 
-    // let captcha_result = app.anti_test(&captcha, API_KEY).unwrap();
-    // let captcha_result = CaptchaResult {
-    //     challenge: "a".to_string(),
-    //     validate: "v".to_string(),
-    // };
+    app.logout().unwrap();
 
-    // p!(five_points);
-    // p!(captcha);
-    // p!(captcha_result);
-
-    // app.post_validate(&uuid, &captcha_result).unwrap();
+    println!("Wow! Successful!")
 }
