@@ -13,16 +13,16 @@ use crate::config::*;
 use crate::error::Error;
 
 #[derive(Debug)]
-pub struct App {
+pub struct Api {
     device: Device,
     user: User,
     client: Client,
 }
 
-impl App {
-    pub fn new(mut device: Device, user: User) -> App {
+impl Api {
+    pub fn new(mut device: Device, user: User) -> Self {
         device.build();
-        App {
+        Api {
             device,
             user,
             // client: Client::new(),
@@ -59,9 +59,9 @@ impl App {
                 + since_the_epoch.subsec_nanos() as u64 / 1_000_000;
 
             let sign_param = btreemap! {
-                "uid".to_string() => self.user.uid.to_string(),
-                "token".to_string() => self.user.token.clone(),
-                "timeStamp".to_string() => time_stamp.to_string(),
+                "uid".into() => self.user.uid.to_string(),
+                "token".into() => self.user.token.clone(),
+                "timeStamp".into() => time_stamp.to_string(),
             };
             let sign = compute_sign(&sign_param, MD5_SIGN_SALT);
 
@@ -265,7 +265,7 @@ impl App {
                 ("appkey", apikey),
                 ("gt", &captcha.gt.clone()),
                 ("challenge", &captcha.challenge.clone()),
-                ("referer", &"".to_string()),
+                ("referer", &"".into()),
                 ("model", &3.to_string()),
             ])
             .send()?

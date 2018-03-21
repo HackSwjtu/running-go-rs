@@ -13,13 +13,13 @@ pub enum Error {
 
 impl From<NoneError> for Error {
     fn from(_: NoneError) -> Self {
-        Error::Api("json incomplete".to_string())
+        Error::Api("json incomplete".into())
     }
 }
 
 impl From<ParseFloatError> for Error {
     fn from(_: ParseFloatError) -> Self {
-        Error::Api("float parse error".to_string())
+        Error::Api("float parse error".into())
     }
 }
 

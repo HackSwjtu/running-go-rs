@@ -19,7 +19,7 @@ extern crate rand;
 extern crate reqwest;
 extern crate uuid;
 
-mod app;
+mod api;
 mod error;
 mod config;
 mod utils;
@@ -29,11 +29,11 @@ use uuid::Uuid;
 
 use crate::entities::*;
 use crate::utils::*;
-use crate::app::App;
+use crate::api::Api;
 
 fn main() {
-    let API_KEY_CAPTCHA = "API KEY".to_string();
-    let API_KEY_BAIDU = "API KEY".to_string();
+    let API_KEY_CAPTCHA = "API KEY".into();
+    let API_KEY_BAIDU = "API KEY".into();
 
     let device = Device {
         imei: "".into(),
@@ -60,20 +60,20 @@ fn main() {
     let flag = start_time - rand_near(30 * 60 * 1000, 5 * 60 * 1000) as u64;
     let uuid = Uuid::new_v4().hyphenated().to_string();
 
-    let mut app = App::new(device, user);
+    let mut api = Api::new(device, user);
 
-    app.login().unwrap();
+    api.login().unwrap();
 
-    let five_points = app.fetch_points(start_pos, sel_distance).unwrap();
+    let five_points = api.fetch_points(start_pos, sel_distance).unwrap();
 
-    let route_plan = app.plan_route(start_pos, &five_points, sel_distance, &API_KEY_BAIDU)
+    let route_plan = api.plan_route(start_pos, &five_points, sel_distance, &API_KEY_BAIDU)
         .unwrap();
 
-    let captcha = app.start_validate(&uuid).unwrap();
+    let captcha = api.start_validate(&uuid).unwrap();
 
-    let captcha_result = app.anti_test(&captcha, &API_KEY_CAPTCHA).unwrap();
+    let captcha_result = api.anti_test(&captcha, &API_KEY_CAPTCHA).unwrap();
 
-    app.post_validate(&uuid, &captcha_result).unwrap();
+    api.post_validate(&uuid, &captcha_result).unwrap();
 
     let record = RunRecord::plan(
         flag,
@@ -84,9 +84,9 @@ fn main() {
         start_time,
     );
 
-    app.post_record(&record).unwrap();
+    api.post_record(&record).unwrap();
 
-    app.logout().unwrap();
+    api.logout().unwrap();
 
     println!("Wow! Successful!")
 }
