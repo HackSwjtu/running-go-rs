@@ -27,6 +27,8 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate uuid;
 
+use std::str::FromStr;
+use std::num::ParseFloatError;
 use std::iter::once;
 use std::f64::consts::PI;
 use std::slice::SliceConcatExt;
@@ -274,15 +276,17 @@ struct GPSRecord {
     pos: GeoPoint,
     sum_dis: f64,
     sum_time: f64,
+    point_type: u32,
 }
 
 impl GPSRecord {
     pub fn plan(start_time: u64, route_points: &Vec<GeoPoint>, distance: u32) -> Vec<Self> {
         let mut records = Vec::new();
-        let start_pos = route_points.last().unwrap().clone();
+        let start_pos = route_points.first().unwrap().clone();
         let mut vectors: Vec<Vector> = route_points
             .iter()
             .map(|p| p.get_offset_of(start_pos))
+            .rev()
             .collect();
         let mut curr_id = 0;
         let mut curr_time = start_time;
@@ -312,6 +316,7 @@ impl GPSRecord {
                 pos: start_pos.offset(curr_pos),
                 sum_dis: sum_dis,
                 sum_time: sum_time,
+                point_type: 0,
             });
 
             curr_id += 1;
@@ -340,9 +345,9 @@ impl GPSRecord {
             "speed" => self.speed,
             "avgSpeed" => self.avg_speed,
             "gainTime" => time_format,
+            "type" => self.point_type,
             "locType" => 61,
             "radius" => 180,
-            "type" => 1,
         }
     }
 }
@@ -371,7 +376,7 @@ impl RunRecord {
         five_points: &Vec<FivePoint>,
         start_time: u64,
     ) -> Self {
-        let gps_records = GPSRecord::plan(start_time, route_points);
+        let gps_records = GPSRecord::plan(start_time, route_points, distance);
         let end_time = gps_records.last().unwrap().time + 5000;
         let step_records = StepRecord::rand(start_time, end_time);
         let speed_records = SpeedRecord::rand(start_time, end_time);
@@ -427,7 +432,7 @@ impl RunRecord {
             "getPrize" => false,
             "selDistance" => self.sel_distance,
             "selectedUnid" => unid,
-            "speed" => (50 * sum_time) / (3 * self.distance) * 1000,
+            "speed" => (50000 * sum_time) / (3 * self.distance),
             "sportType" => 1,
             "startTime" => self.start_time,
             "status" => 0,
@@ -469,13 +474,10 @@ impl RunRecord {
             "signature" => signature,
         };
 
-        match (&mut json, &json_extend) {
-            (JsonValue::Object(obj), JsonValue::Object(obj_extend)) => {
-                for (k, v) in obj_extend.iter() {
-                    obj.insert(k, v.clone());
-                }
+        if let (JsonValue::Object(obj), JsonValue::Object(obj_extend)) = (&mut json, &json_extend) {
+            for (k, v) in obj_extend.iter() {
+                obj.insert(k, v.clone());
             }
-            _ => unreachable!(),
         }
 
         p!(json);
@@ -684,14 +686,17 @@ impl App {
     pub fn plan_route(
         &mut self,
         start_pos: GeoPoint,
-        five_points: Vec<FivePoint>,
-        apikey: String,
+        five_points: &Vec<FivePoint>,
+        apikey: &String,
     ) -> Result<Vec<GeoPoint>, Error> {
-        let mut routes = Vec::new();
+        let mut route_points = vec![start_pos];
 
         for (prev, next) in once(start_pos)
             .chain(five_points.iter().map(|p| p.pos))
-            .chain(once(start_pos.offset(Vector{})))
+            .chain(once(start_pos.offset(Vector {
+                x: 10000.0,
+                y: 10000.0,
+            })))
             .tuple_windows()
         {
             let res = self.client
@@ -703,9 +708,31 @@ impl App {
                 ])
                 .send()?
                 .text()?;
+
+            p!(res);
+
+            let res = json::parse(&res)?;
+
+            if res["status"] != 0 {
+                return Err(Error::Api(res["message"].as_str()?.to_string()));
+            }
+
+            for step in res["result"]["routes"][0]["steps"].members() {
+                let path = step["path"].as_str()?;
+                let points = path.split(";");
+
+                for point in points {
+                    let mut lat_lon = point.split(",");
+                    let lon = f64::from_str(lat_lon.next()?)?;
+                    let lat = f64::from_str(lat_lon.next()?)?;
+                    route_points.push(GeoPoint { lon, lat });
+                }
+            }
         }
 
-        Ok(routes)
+        p!(route_points);
+
+        Ok(route_points)
     }
 
     pub fn start_validate(&mut self, uuid: &String) -> Result<Captcha, Error> {
@@ -730,15 +757,19 @@ impl App {
         })
     }
 
-    pub fn anti_test(&mut self, captcha: &Captcha, apikey: String) -> Result<CaptchaResult, Error> {
+    pub fn anti_test(
+        &mut self,
+        captcha: &Captcha,
+        apikey: &String,
+    ) -> Result<CaptchaResult, Error> {
         let res = self.client
             .get("http://jiyan.25531.com/api/create")
             .query(&[
                 ("appkey", apikey),
-                ("gt", captcha.gt.clone()),
-                ("challenge", captcha.challenge.clone()),
-                ("referer", "".to_string()),
-                ("model", 3.to_string()),
+                ("gt", &captcha.gt.clone()),
+                ("challenge", &captcha.challenge.clone()),
+                ("referer", &"".to_string()),
+                ("model", &3.to_string()),
             ])
             .send()?
             .text()?;
@@ -817,8 +848,14 @@ enum Error {
 }
 
 impl From<NoneError> for Error {
-    fn from(er_ror: NoneError) -> Self {
+    fn from(_: NoneError) -> Self {
         Error::Api("json incomplete".to_string())
+    }
+}
+
+impl From<ParseFloatError> for Error {
+    fn from(_: ParseFloatError) -> Self {
+        Error::Api("float parse error".to_string())
     }
 }
 
@@ -859,7 +896,7 @@ fn main() {
     };
 
     let sel_distance = 2000;
-    let start_time = 1521523825299;
+    let start_time = 1521539825299;
     let flag = start_time - rand_near(30 * 60 * 1000, 5 * 60 * 1000) as u64;
     let uuid = Uuid::new_v4().hyphenated().to_string();
 
@@ -871,12 +908,12 @@ fn main() {
 
     p!(five_points);
 
-    let route_points = app.plan_route(start_pos, five_points, API_KEY_BAIDU)
+    let route_points = app.plan_route(start_pos, &five_points, &API_KEY_BAIDU)
         .unwrap();
 
     let captcha = app.start_validate(&uuid).unwrap();
 
-    let captcha_result = app.anti_test(&captcha, API_KEY_CAPTCHA).unwrap();
+    let captcha_result = app.anti_test(&captcha, &API_KEY_CAPTCHA).unwrap();
 
     p!(captcha);
     p!(captcha_result);
@@ -892,6 +929,8 @@ fn main() {
         &five_points,
         start_time,
     );
+
+    p!(record);
 
     p!(record.to_json(123, 8756).to_string());
 
