@@ -65,10 +65,10 @@ fn run() -> Result<(), Error> {
         lon: 113.044233,
     };
 
-    let start_pos = start_pos.offset(Vector::ORIGIN.fuzzle(300.0));
-
     let sel_distance = 2000;
     let start_time = 1521539825299;
+
+    let start_pos = start_pos.offset(Vector::ORIGIN.fuzzle(300.0));
     let flag = start_time - rand_near(30 * 60 * 1000, 5 * 60 * 1000) as u64;
     let uuid = Uuid::new_v4().hyphenated().to_string();
 
