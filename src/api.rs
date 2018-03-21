@@ -1,6 +1,6 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::str::FromStr;
-use reqwest;
+// use reqwest;
 use reqwest::Client;
 use reqwest::header::Headers;
 use base64;

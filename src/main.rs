@@ -27,7 +27,7 @@ mod utils;
 mod entities;
 
 use uuid::Uuid;
-use retry::retry;
+use retry::Retry;
 
 use crate::entities::*;
 use crate::utils::*;
@@ -65,6 +65,8 @@ fn run() -> Result<(), Error> {
         lon: 113.044233,
     };
 
+    let start_pos = start_pos.offset(Vector::ORIGIN.fuzzle(300.0));
+
     let sel_distance = 2000;
     let start_time = 1521539825299;
     let flag = start_time - rand_near(30 * 60 * 1000, 5 * 60 * 1000) as u64;
@@ -80,12 +82,13 @@ fn run() -> Result<(), Error> {
 
     let captcha = api.start_validate(&uuid)?;
 
-    let captcha_result = retry(
-        5,
-        500,
-        || api.anti_test(&captcha, &API_KEY_CAPTCHA),
-        |res| res.is_ok(),
-    ).map_err(|_| Error::Api("Captcha retried too many time".into()))??;
+    let captcha_result = Retry::new(
+        &mut || api.anti_test(&captcha, &API_KEY_CAPTCHA),
+        &mut |res| res.is_ok(),
+    ).try(5)
+        .wait(500)
+        .execute()
+        .map_err(|_| Error::Api("Captcha retried too many time".into()))??;
 
     api.post_validate(&uuid, &captcha_result)?;
 

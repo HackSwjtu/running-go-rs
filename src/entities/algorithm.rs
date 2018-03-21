@@ -1,7 +1,6 @@
 use std::f64::consts::PI;
 
 use crate::utils::*;
-use crate::config::*;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vector {
@@ -10,6 +9,8 @@ pub struct Vector {
 }
 
 impl Vector {
+    pub const ORIGIN: Vector = Vector { x: 0.0, y: 0.0 };
+
     pub fn distance_to(&self, v: Vector) -> f64 {
         ((v.x - self.x).powf(2.0) + (v.y - self.y).powf(2.0)).sqrt()
     }
@@ -28,10 +29,10 @@ impl Vector {
         }
     }
 
-    pub fn fuzzle(&self) -> Vector {
+    pub fn fuzzle(&self, err: f64) -> Vector {
         Vector {
-            x: rand_near_f64(self.x, FUZZLE_ERR),
-            y: rand_near_f64(self.y, FUZZLE_ERR),
+            x: rand_near_f64(self.x, err),
+            y: rand_near_f64(self.y, err),
         }
     }
 }
