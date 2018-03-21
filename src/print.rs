@@ -27,12 +27,11 @@ impl Print {
         self.done_prev_process();
 
         t.fg(term::color::WHITE);
-        write!(t, "     [");
+        write!(t, "     ");
         t.fg(term::color::BRIGHT_BLUE);
         write!(t, "Process");
         t.fg(term::color::WHITE);
-        write!(t, "] ");
-        writeln!(t, "{}", info);
+        writeln!(t, " {}", info);
 
         self.prev_process = Some(info.to_string());
     }
@@ -45,12 +44,11 @@ impl Print {
             t.carriage_return();
             t.delete_line();
             t.fg(term::color::WHITE);
-            write!(t, "     [");
+            write!(t, "     ");
             t.fg(term::color::BRIGHT_RED);
             write!(t, "Error");
             t.fg(term::color::WHITE);
-            write!(t, "] ");
-            writeln!(t, "{} - {}", prev_process, err);
+            writeln!(t, " {} - {}", prev_process, err);
         }
 
         self.prev_process = None;
@@ -63,12 +61,11 @@ impl Print {
             t.carriage_return();
             t.delete_line();
             t.fg(term::color::WHITE);
-            write!(t, "     [");
+            write!(t, "     ");
             t.fg(term::color::GREEN);
             write!(t, "Done");
             t.fg(term::color::WHITE);
-            write!(t, "] ");
-            writeln!(t, "{}", prev_process);
+            writeln!(t, " {}", prev_process);
         }
     }
 }

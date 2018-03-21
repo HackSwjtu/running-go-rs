@@ -41,7 +41,7 @@ fn main() {
     let mut print = Print::new();
 
     match run(&mut print) {
-        Ok(()) => print.info("Successful!"),
+        Ok(()) => print.info("Success!"),
         Err(err) => print.error(&format!("Error occured: {:?}", err)),
     }
 }
