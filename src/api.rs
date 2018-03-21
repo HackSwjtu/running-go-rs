@@ -25,12 +25,12 @@ impl Api {
         Api {
             device,
             user,
-            // client: Client::new(),
-            client: Client::builder()
-                .proxy(reqwest::Proxy::https("http://127.0.0.1:8888").unwrap())
-                .proxy(reqwest::Proxy::http("http://127.0.0.1:8888").unwrap())
-                .build()
-                .unwrap(),
+            client: Client::new(),
+            // client: Client::builder()
+            //     .proxy(reqwest::Proxy::https("http://127.0.0.1:8888").unwrap())
+            //     .proxy(reqwest::Proxy::http("http://127.0.0.1:8888").unwrap())
+            //     .build()
+            //     .unwrap(),
         }
     }
 
