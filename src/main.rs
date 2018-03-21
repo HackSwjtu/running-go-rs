@@ -132,6 +132,13 @@ impl Vector {
     }
 }
 
+#[derive(Debug)]
+struct RoutePlan {
+    route_points: Vec<GeoPoint>,
+    min_distance: u32,
+    min_points: u32,
+}
+
 #[derive(Debug, Clone, Copy)]
 struct GeoPoint {
     lon: f64,
@@ -280,30 +287,32 @@ struct GPSRecord {
 }
 
 impl GPSRecord {
-    pub fn plan(start_time: u64, route_points: &Vec<GeoPoint>, distance: u32) -> Vec<Self> {
+    pub fn plan(start_time: u64, route_plan: &RoutePlan) -> Vec<Self> {
         let mut records = Vec::new();
-        let start_pos = route_points.first().unwrap().clone();
-        let mut vectors: Vec<Vector> = route_points
+        let start_pos = route_plan.route_points.first().unwrap().clone();
+        let vectors: Vec<Vector> = route_plan
+            .route_points
             .iter()
             .map(|p| p.get_offset_of(start_pos))
-            .rev()
             .collect();
         let mut curr_id = 0;
+        let mut curr_point_idx = 0;
         let mut curr_time = start_time;
         let mut curr_pos = Vector { x: 0.0, y: 0.0 };
         let mut sum_time = 0.0;
         let mut sum_dis = 0.0;
 
-        while sum_dis < distance as f64 {
+        while sum_dis < route_plan.min_distance as f64
+            || curr_point_idx < route_plan.min_points as usize
+        {
             let speed = rand_near_f64(AVG_SPEED, SPEED_ERR);
             let duration = rand_near_f64(SPAMLE_TIME * 1000.0, SPAMLE_TIME_ERR * 1000.0);
             let distance = speed * duration / 1000.0;
 
-            assert!(vectors.len() > 0);
-            let target = vectors.last().unwrap();
-            curr_pos = curr_pos.step_toward(*target, distance).fuzzle();
-            if curr_pos.distance_to(*target) < 5.0 {
-                vectors.pop();
+            let target_point = vectors[curr_point_idx];
+            curr_pos = curr_pos.step_toward(target_point, distance).fuzzle();
+            if curr_pos.distance_to(target_point) < 5.0 {
+                curr_point_idx += 1;
             }
 
             let speed_weird = (50.0 * sum_time) / (3.0 * sum_dis);
@@ -371,12 +380,11 @@ impl RunRecord {
         flag: u64,
         uuid: &String,
         sel_distance: u32,
-        distance: u32,
-        route_points: &Vec<GeoPoint>,
+        route_plan: &RoutePlan,
         five_points: &Vec<FivePoint>,
         start_time: u64,
     ) -> Self {
-        let gps_records = GPSRecord::plan(start_time, route_points, distance);
+        let gps_records = GPSRecord::plan(start_time, route_plan);
         let end_time = gps_records.last().unwrap().time + 5000;
         let step_records = StepRecord::rand(start_time, end_time);
         let speed_records = SpeedRecord::rand(start_time, end_time);
@@ -385,7 +393,7 @@ impl RunRecord {
             flag,
             uuid: uuid.clone(),
             sel_distance,
-            distance,
+            distance: gps_records.last().unwrap().sum_dis as u32,
             five_points: five_points.to_vec(),
             start_time,
             end_time,
@@ -687,50 +695,76 @@ impl App {
         &mut self,
         start_pos: GeoPoint,
         five_points: &Vec<FivePoint>,
+        sel_distance: u32,
         apikey: &String,
-    ) -> Result<Vec<GeoPoint>, Error> {
+    ) -> Result<RoutePlan, Error> {
         let mut route_points = vec![start_pos];
 
-        for (prev, next) in once(start_pos)
-            .chain(five_points.iter().map(|p| p.pos))
-            .chain(once(start_pos.offset(Vector {
-                x: 10000.0,
-                y: 10000.0,
-            })))
-            .tuple_windows()
-        {
-            let res = self.client
-                .get("http://api.map.baidu.com/direction/v2/riding")
-                .query(&[
-                    ("origin", format!("{:.6},{:.6}", prev.lat, prev.lon)),
-                    ("destination", format!("{:.6},{:.6}", next.lat, next.lon)),
-                    ("ak", apikey.clone()),
-                ])
-                .send()?
-                .text()?;
+        let north_east = start_pos.offset(Vector {
+            x: 10000.0,
+            y: 10000.0,
+        });
 
-            p!(res);
+        let mut orig;
+        let mut dest = start_pos;
 
-            let res = json::parse(&res)?;
+        for p in five_points.iter().map(|p| p.pos) {
+            orig = dest;
+            dest = p;
 
-            if res["status"] != 0 {
-                return Err(Error::Api(res["message"].as_str()?.to_string()));
-            }
-
-            for step in res["result"]["routes"][0]["steps"].members() {
-                let path = step["path"].as_str()?;
-                let points = path.split(";");
-
-                for point in points {
-                    let mut lat_lon = point.split(",");
-                    let lon = f64::from_str(lat_lon.next()?)?;
-                    let lat = f64::from_str(lat_lon.next()?)?;
-                    route_points.push(GeoPoint { lon, lat });
-                }
-            }
+            route_points.extend(self.baidu_get_path(orig, dest, apikey)?.iter());
         }
 
+        let min_points = route_points.len() as u32;
+
+        route_points.extend(self.baidu_get_path(dest, north_east, apikey)?.iter());
+
         p!(route_points);
+
+        Ok(RoutePlan {
+            min_distance: sel_distance + rand_near(150, 50),
+            min_points,
+            route_points,
+        })
+    }
+
+    pub fn baidu_get_path(
+        &mut self,
+        orig: GeoPoint,
+        dest: GeoPoint,
+        apikey: &String,
+    ) -> Result<Vec<GeoPoint>, Error> {
+        let res = self.client
+            .get("http://api.map.baidu.com/direction/v2/riding")
+            .query(&[
+                ("origin", format!("{:.6},{:.6}", orig.lat, orig.lon)),
+                ("destination", format!("{:.6},{:.6}", dest.lat, dest.lon)),
+                ("ak", apikey.clone()),
+            ])
+            .send()?
+            .text()?;
+
+        p!(res);
+
+        let res = json::parse(&res)?;
+
+        if res["status"] != 0 {
+            return Err(Error::Api(res["message"].as_str()?.to_string()));
+        }
+
+        let mut route_points = Vec::new();
+
+        for step in res["result"]["routes"][0]["steps"].members() {
+            let path = step["path"].as_str()?;
+            let points = path.split(";");
+
+            for point in points {
+                let mut lat_lon = point.split(",");
+                let lon = f64::from_str(lat_lon.next()?)?;
+                let lat = f64::from_str(lat_lon.next()?)?;
+                route_points.push(GeoPoint { lon, lat });
+            }
+        }
 
         Ok(route_points)
     }
@@ -872,8 +906,8 @@ impl From<json::Error> for Error {
 }
 
 fn main() {
-    let API_KEY_CAPTCHA = "78c7d1e23f8a0d453338d2f9cdabbbf7".to_string();
-    let API_KEY_BAIDU = "hzP5rHZij3hvkSYFHxeApkPBj9xboscl".to_string();
+    let API_KEY_CAPTCHA = "API KEY".to_string();
+    let API_KEY_BAIDU = "API KEY".to_string();
 
     let device = Device {
         imei: "".into(),
@@ -908,7 +942,7 @@ fn main() {
 
     p!(five_points);
 
-    let route_points = app.plan_route(start_pos, &five_points, &API_KEY_BAIDU)
+    let route_plan = app.plan_route(start_pos, &five_points, sel_distance, &API_KEY_BAIDU)
         .unwrap();
 
     let captcha = app.start_validate(&uuid).unwrap();
@@ -924,8 +958,7 @@ fn main() {
         flag,
         &uuid,
         sel_distance,
-        sel_distance + 100,
-        &route_points,
+        &route_plan,
         &five_points,
         start_time,
     );
