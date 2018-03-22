@@ -9,8 +9,8 @@ use crate::entities::*;
 pub struct RunRecord {
     pub flag: u64,
     pub uuid: String,
-    pub sel_distance: u32,
-    pub distance: u32,
+    pub sel_distance: u64,
+    pub distance: u64,
     pub five_points: Vec<FivePoint>,
     pub start_time: u64,
     pub end_time: u64,
@@ -23,7 +23,7 @@ impl RunRecord {
     pub fn plan(
         flag: u64,
         uuid: &String,
-        sel_distance: u32,
+        sel_distance: u64,
         route_plan: &RoutePlan,
         five_points: &Vec<FivePoint>,
         start_time: u64,
@@ -37,7 +37,7 @@ impl RunRecord {
             flag,
             uuid: uuid.clone(),
             sel_distance,
-            distance: gps_records.last().unwrap().sum_dis as u32,
+            distance: gps_records.last().unwrap().sum_dis as u64,
             five_points: five_points.to_vec(),
             start_time,
             end_time,
@@ -47,7 +47,7 @@ impl RunRecord {
         }
     }
 
-    pub fn to_json(&self, uid: u32, unid: u32) -> JsonValue {
+    pub fn to_json(&self, uid: u64, unid: u64) -> JsonValue {
         let all_loc_json = JsonValue::Array(
             self.gps_records
                 .iter()
@@ -75,7 +75,7 @@ impl RunRecord {
                 .collect(),
         );
 
-        let sum_time = ((self.end_time - self.start_time) / 1000) as u32;
+        let sum_time = ((self.end_time - self.start_time) / 1000) as u64;
 
         let mut json = object! {
             "avgStepFreq" => rand_near(STEP_CNT_PER_MIN, STEP_CNT_PER_MIN_ERR),

@@ -27,7 +27,7 @@ impl Print {
         self.done_prev_process();
 
         t.fg(term::color::WHITE);
-        write!(t, "     ");
+        write!(t, "  ");
         t.fg(term::color::BRIGHT_BLUE);
         write!(t, "Process");
         t.fg(term::color::WHITE);
@@ -44,7 +44,7 @@ impl Print {
             t.carriage_return();
             t.delete_line();
             t.fg(term::color::WHITE);
-            write!(t, "     ");
+            write!(t, "    ");
             t.fg(term::color::BRIGHT_RED);
             write!(t, "Error");
             t.fg(term::color::WHITE);

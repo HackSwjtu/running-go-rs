@@ -5,10 +5,10 @@ use crate::utils::*;
 
 #[derive(Debug)]
 pub struct StepRecord {
-    pub id: u32,
+    pub id: u64,
     pub begin: u64,
     pub end: u64,
-    pub step_count: u32,
+    pub step_count: u64,
     pub avg_diff: f64,
     pub max_diff: f64,
     pub min_diff: f64,

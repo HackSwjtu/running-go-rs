@@ -5,7 +5,7 @@ use crate::utils::*;
 
 #[derive(Debug)]
 pub struct SpeedRecord {
-    pub id: u32,
+    pub id: u64,
     pub begin: u64,
     pub end: u64,
     pub distance: f64,

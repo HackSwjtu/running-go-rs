@@ -1,4 +1,3 @@
-use chrono::{FixedOffset, TimeZone};
 use json::JsonValue;
 
 use crate::utils::*;
@@ -8,13 +7,13 @@ use crate::entities::*;
 #[derive(Debug)]
 pub struct GPSRecord {
     pub time: u64,
-    pub id: u32,
+    pub id: u64,
     pub speed: f64,
     pub avg_speed: f64,
     pub pos: GeoPoint,
     pub sum_dis: f64,
     pub sum_time: f64,
-    pub point_type: u32,
+    pub point_type: u64,
 }
 
 impl GPSRecord {
@@ -74,25 +73,20 @@ impl GPSRecord {
     }
 
     pub fn to_json(&self, flag: u64) -> JsonValue {
-        let time_zone = FixedOffset::east(8 * 3600);
-        let time_format = time_zone
-            .timestamp(self.time as i64 / 1000, 0)
-            .format("%Y-%m-%d %H:%M:%S")
-            .to_string();
-
         object! {
-            "id" => self.id,
-            "flag" => flag,
-            "lat" => self.pos.lat,
-            "lng" => self.pos.lon,
-            "totalDis" => self.sum_dis / 1000.0,
-            "totalTime" => self.sum_time.round() as u32,
-            "speed" => self.speed,
-            "avgSpeed" => self.avg_speed,
-            "gainTime" => time_format,
-            "type" => self.point_type,
-            "locType" => 61,
-            "radius" => 180,
+            "id" => self.id.to_string(),
+            "pointid" => self.id.to_string(),
+            "flag" => flag.to_string(),
+            "radius" => 180.to_string(),
+            "lat" => self.pos.lat.to_string(),
+            "lng" => self.pos.lon.to_string(),
+            "totaldis" => self.sum_dis.to_string(),
+            "totaltime" => self.sum_time.round() as u64,
+            "speed" => self.speed.to_string(),
+            "avgspeed" => self.avg_speed.to_string(),
+            "gaintime" => self.time.to_string(),
+            "type" => self.point_type.to_string(),
+            "locationtype" => 0.to_string(),
         }
     }
 }

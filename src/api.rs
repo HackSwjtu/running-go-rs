@@ -109,8 +109,8 @@ impl Api {
         let data = &res["data"];
 
         self.user.token = data["token"].as_str()?.to_string();
-        self.user.uid = data["uid"].as_u32()?;
-        self.user.unid = data["unid"].as_u32()?;
+        self.user.uid = data["uid"].as_u64()?;
+        self.user.unid = data["unid"].as_u64()?;
         self.user.campus_name = data["campusName"].as_str()?.to_string();
 
         Ok(())
@@ -119,7 +119,7 @@ impl Api {
     pub fn fetch_points(
         &mut self,
         start_pos: GeoPoint,
-        distance: u32,
+        distance: u64,
     ) -> Result<Vec<FivePoint>, Error> {
         let sign_str = format!("http://gxapp.iydsj.com/api/v18/get/1/distance/{}", distance);
         let sign = format!("{:X}", md5::compute(sign_str + MD5_KEY));
@@ -146,9 +146,9 @@ impl Api {
             .enumerate()
             .map(|(i, obj)| {
                 Ok(FivePoint {
-                    id: i as u32,
+                    id: i as u64,
                     name: obj["pointName"].as_str()?.to_string(),
-                    fixed: obj["isFixed"].as_u32()?,
+                    fixed: obj["isFixed"].as_u64()?,
                     pos: GeoPoint {
                         lon: obj["lon"].as_f64()?,
                         lat: obj["lat"].as_f64()?,
@@ -162,7 +162,7 @@ impl Api {
         &mut self,
         start_pos: GeoPoint,
         five_points: &Vec<FivePoint>,
-        sel_distance: u32,
+        sel_distance: u64,
         apikey: &String,
     ) -> Result<RoutePlan, Error> {
         let mut route_points = vec![start_pos];
@@ -182,7 +182,7 @@ impl Api {
             route_points.extend(self.baidu_get_path(orig, dest, apikey)?.iter());
         }
 
-        let min_points = route_points.len() as u32;
+        let min_points = route_points.len() as u64;
 
         route_points.extend(self.baidu_get_path(dest, north_east, apikey)?.iter());
 
