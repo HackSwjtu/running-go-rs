@@ -116,12 +116,11 @@ impl Api {
         Ok(())
     }
 
-    pub fn fetch_points(
-        &mut self,
-        start_pos: GeoPoint,
-        distance: u64,
-    ) -> Result<Vec<FivePoint>, Error> {
-        let sign_str = format!("http://gxapp.iydsj.com/api/v18/get/1/distance/{}", distance);
+    pub fn fetch_points(&mut self, start_pos: GeoPoint) -> Result<Vec<FivePoint>, Error> {
+        let sign_str = format!(
+            "http://gxapp.iydsj.com/api/v18/get/1/distance/{}",
+            SEL_DISTANCE
+        );
         let sign = format!("{:X}", md5::compute(sign_str + MD5_KEY));
 
         let json = object!{
@@ -161,9 +160,9 @@ impl Api {
     pub fn plan_route(
         &mut self,
         start_pos: GeoPoint,
+        distance: u64,
         five_points: &Vec<FivePoint>,
-        sel_distance: u64,
-        apikey: &String,
+        apikey: &str,
     ) -> Result<RoutePlan, Error> {
         let mut route_points = vec![start_pos];
 
@@ -187,7 +186,7 @@ impl Api {
         route_points.extend(self.baidu_get_path(dest, north_east, apikey)?.iter());
 
         Ok(RoutePlan {
-            min_distance: sel_distance + rand_near(150, 50),
+            min_distance: distance + rand_near(150, 50),
             min_points,
             route_points,
         })
@@ -197,14 +196,14 @@ impl Api {
         &mut self,
         orig: GeoPoint,
         dest: GeoPoint,
-        apikey: &String,
+        apikey: &str,
     ) -> Result<Vec<GeoPoint>, Error> {
         let res = self.client
             .get("http://api.map.baidu.com/direction/v2/riding")
             .query(&[
                 ("origin", format!("{:.6},{:.6}", orig.lat, orig.lon)),
                 ("destination", format!("{:.6},{:.6}", dest.lat, dest.lon)),
-                ("ak", apikey.clone()),
+                ("ak", apikey.to_string()),
             ])
             .send()?
             .text()?;
@@ -232,7 +231,7 @@ impl Api {
         Ok(route_points)
     }
 
-    pub fn start_validate(&mut self, uuid: &String) -> Result<Captcha, Error> {
+    pub fn start_validate(&mut self, uuid: &str) -> Result<Captcha, Error> {
         let res = self.client
             .get("https://gxapp.iydsj.com/api/v20/security/geepreprocess")
             .headers(self.headers_user_agent())
@@ -254,19 +253,15 @@ impl Api {
         })
     }
 
-    pub fn anti_test(
-        &mut self,
-        captcha: &Captcha,
-        apikey: &String,
-    ) -> Result<CaptchaResult, Error> {
+    pub fn anti_test(&mut self, captcha: &Captcha, apikey: &str) -> Result<CaptchaResult, Error> {
         let res = self.client
             .get("http://jiyan.25531.com/api/create")
             .query(&[
                 ("appkey", apikey),
-                ("gt", &captcha.gt.clone()),
-                ("challenge", &captcha.challenge.clone()),
-                ("referer", &"".into()),
-                ("model", &3.to_string()),
+                ("gt", &captcha.gt),
+                ("challenge", &captcha.challenge),
+                ("referer", ""),
+                ("model", "3"),
             ])
             .send()?
             .text()?;
@@ -285,11 +280,11 @@ impl Api {
         })
     }
 
-    pub fn post_validate(&mut self, uuid: &String, captcha: &CaptchaResult) -> Result<(), Error> {
+    pub fn post_validate(&mut self, uuid: &str, captcha: &CaptchaResult) -> Result<(), Error> {
         let params = hashmap! {
             "uid" => self.user.uid.to_string(),
             "osType" => OS_TYPE.to_string(),
-            "uuid" => uuid.clone(),
+            "uuid" => uuid.to_string(),
             "geetest_challenge" => captcha.challenge.clone(),
             "geetest_seccode" => captcha.validate.clone(),
             "geetest_validate" => captcha.validate.clone(),

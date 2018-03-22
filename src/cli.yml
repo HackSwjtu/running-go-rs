@@ -1,43 +1,53 @@
-name: running-go
+name: Running-Go
 version: "0.1.0"
 author: andylokandy <andylokandy@hotmail.com>
-about: Run by high tech
+about: Run by high technology
 subcommands:
-  - new:
+  - generate:
       about: Generate a user config file
       args:
+          - output:
+              value_name: FILE
+              help: Path to output user configuration file
+              required: true
           - username:
-              short: u
               long: username
               value_name: USERNAME
               help: Sets username of account
               required: true
           - password:
-              short: p
               long: password
               value_name: PASSWORD
               help: Sets password of account
               required: true
-          - output:
-              short: o
-              long: output
-              value_name: FILE
-              help: Sets path that output user config file
+          - lat:
+              long: lat
+              value_name: LATITUDE
+              help: Sets latitude of user's university
+              required: true
+          - lon:
+              long: lon
+              value_name: LONTITUDE
+              help: Sets lontitude of user's university
               required: true
   - run:
       about: Start running
       args:
           - config:
-              short: c
-              long: config
               value_name: FILE
               required: true
-              help: Sets user configuration file. <Generate by "running-go new" command>
+              help: User configuration file. Generate by "running-go generate" command.
               takes_value: true
-          -  time:
+          - distance:
+              short: d
+              long: distance
+              value_name: DISTANCE_METER
+              help: Sets distance for this record
+              required: true
+          -  time:  
               short: t
               long: time
-              value_name: "YYYY/MM/DD hh::mm::ss"
+              value_name: '"YYYY/MM/DD hh::mm::ss"'
               required: true
-              help: Sets starting time of activity record 
+              help: Sets time of activity record.
               takes_value: true

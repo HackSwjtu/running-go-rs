@@ -4,6 +4,8 @@ pub const MD5_KEY: &'static str = "05df15504f394eab8dd3ab8180006a83";
 pub const MD5_SIGN_SALT: &'static str = "&wh2016_swcampus";
 pub const MD5_SIGN_SALT_RUN: &'static str = "&ODJw#h03b_0EaV";
 
+pub const SEL_DISTANCE: u64 = 2000;
+
 pub const AVG_SPEED: f64 = 3.0;
 pub const SPEED_ERR: f64 = 1.0;
 pub const SPAMLE_TIME: f64 = 6.0;
@@ -22,5 +24,5 @@ pub const MAX_DIFF: f64 = 40.0;
 pub const MAX_DIFF_ERR: f64 = 15.0;
 pub const FUZZLE_ERR: f64 = 2.0;
 
-let API_KEY_CAPTCHA: &'static str = "API KEY";
-let API_KEY_BAIDU: &'static str= "API KEY";
+pub const API_KEY_CAPTCHA: &'static str = "API KEY";
+pub const API_KEY_BAIDU: &'static str = "API KEY";

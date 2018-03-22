@@ -1,8 +1,8 @@
 use std::io;
-use std::io::prelude::*;
 use std::convert::From;
 use std::option::NoneError;
-use std::num::ParseFloatError;
+use std::num::{ParseFloatError, ParseIntError};
+use time;
 use serde_ini;
 use reqwest;
 use json;
@@ -12,21 +12,33 @@ pub enum Error {
     IO(reqwest::Error),
     Parse(json::Error),
     Api(String),
+    Format(String),
     Config(String),
 }
 
 impl From<NoneError> for Error {
     fn from(_: NoneError) -> Self {
-        Error::Api("json incomplete".into())
+        Error::Format("invalid format".into())
     }
 }
 
 impl From<ParseFloatError> for Error {
     fn from(_: ParseFloatError) -> Self {
-        Error::Api("float parse error".into())
+        Error::Format("invalid float".into())
     }
 }
 
+impl From<ParseIntError> for Error {
+    fn from(_: ParseIntError) -> Self {
+        Error::Format("invalid interger".into())
+    }
+}
+
+impl From<time::ParseError> for Error {
+    fn from(_: time::ParseError) -> Self {
+        Error::Format("invalid time format".into())
+    }
+}
 impl From<reqwest::Error> for Error {
     fn from(error: reqwest::Error) -> Self {
         Error::IO(error)

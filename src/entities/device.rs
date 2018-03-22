@@ -1,4 +1,3 @@
-use rand::{self, Rng};
 use md5;
 
 #[derive(Default, Debug)]

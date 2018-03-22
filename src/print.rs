@@ -11,25 +11,13 @@ impl Print {
         Print { prev_process: None }
     }
 
-    pub fn info(&mut self, info: &str) {
-        self.done_prev_process();
-
-        let mut t = term::stdout().unwrap();
-        t.fg(term::color::WHITE);
-        writeln!(t, "    {}", info);
-
-        self.prev_process = None;
-    }
-
     pub fn process(&mut self, info: &str) {
         let mut t = term::stdout().unwrap();
 
         self.done_prev_process();
 
-        t.fg(term::color::WHITE);
-        write!(t, "  ");
         t.fg(term::color::BRIGHT_BLUE);
-        write!(t, "Process");
+        write!(t, "  Process");
         t.fg(term::color::WHITE);
         writeln!(t, " {}", info);
 
@@ -43,10 +31,8 @@ impl Print {
             t.cursor_up();
             t.carriage_return();
             t.delete_line();
-            t.fg(term::color::WHITE);
-            write!(t, "    ");
             t.fg(term::color::BRIGHT_RED);
-            write!(t, "Error");
+            write!(t, "    Error");
             t.fg(term::color::WHITE);
             writeln!(t, " {} - {}", prev_process, err);
         }
@@ -60,10 +46,8 @@ impl Print {
             t.cursor_up();
             t.carriage_return();
             t.delete_line();
-            t.fg(term::color::WHITE);
-            write!(t, "     ");
             t.fg(term::color::GREEN);
-            write!(t, "Done");
+            write!(t, "     Done");
             t.fg(term::color::WHITE);
             writeln!(t, " {}", prev_process);
         }
