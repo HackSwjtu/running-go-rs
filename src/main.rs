@@ -6,7 +6,6 @@
 #![allow(non_snake_case)]
 
 extern crate base64;
-extern crate chrono;
 extern crate itertools;
 #[macro_use]
 extern crate json;

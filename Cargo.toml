@@ -13,7 +13,6 @@ p-macro = "0.2.0"
 itertools = "0.7"
 uuid = "0.6"
 maplit = "1.0"
-chrono = "0.4"
 retry = "0.4"
 term = "0.5"
 
