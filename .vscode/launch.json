@@ -5,7 +5,7 @@
             "type": "gdb",
             "request": "launch",
             "name": "Launch Program",
-            "target": "./target/debug/running-go-rs",
+            "target": "./target/debug/running-go",
             "cwd": "${workspaceRoot}"
         }
     ],

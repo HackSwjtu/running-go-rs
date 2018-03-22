@@ -1,6 +1,9 @@
+use std::io;
+use std::io::prelude::*;
 use std::convert::From;
 use std::option::NoneError;
 use std::num::ParseFloatError;
+use serde_ini;
 use reqwest;
 use json;
 
@@ -9,6 +12,7 @@ pub enum Error {
     IO(reqwest::Error),
     Parse(json::Error),
     Api(String),
+    Config(String),
 }
 
 impl From<NoneError> for Error {
@@ -32,5 +36,23 @@ impl From<reqwest::Error> for Error {
 impl From<json::Error> for Error {
     fn from(error: json::Error) -> Self {
         Error::Parse(error)
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(error: io::Error) -> Self {
+        Error::Config(format!("{}", error))
+    }
+}
+
+impl From<serde_ini::de::Error> for Error {
+    fn from(error: serde_ini::de::Error) -> Self {
+        Error::Config(format!("{}", error))
+    }
+}
+
+impl From<serde_ini::ser::Error> for Error {
+    fn from(error: serde_ini::ser::Error) -> Self {
+        Error::Config(format!("{}", error))
     }
 }

@@ -18,6 +18,6 @@ impl Device {
             "{:x}",
             md5::compute(String::new() + &self.imei + &self.model + &self.mac)
         );
-        self.custom_id = format!("{:X}", md5::compute(rand::thread_rng().gen::<[u8; 16]>()));
+        self.custom_id = format!("{:X}", md5::compute(&self.id));
     }
 }

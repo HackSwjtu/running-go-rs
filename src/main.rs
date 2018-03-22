@@ -19,9 +19,16 @@ extern crate reqwest;
 extern crate retry;
 extern crate term;
 extern crate uuid;
+#[macro_use]
+extern crate clap;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
+extern crate serde_ini;
 
 mod api;
 mod error;
+mod constant;
 mod config;
 mod utils;
 mod entities;
@@ -29,7 +36,9 @@ mod print;
 
 use uuid::Uuid;
 use retry::Retry;
+use clap::App;
 
+use crate::config::Config;
 use crate::entities::*;
 use crate::utils::*;
 use crate::error::Error;
@@ -37,40 +46,41 @@ use crate::api::Api;
 use crate::print::Print;
 
 fn main() {
+    let yaml = load_yaml!("cli.yml");
+    let matches = App::from_yaml(yaml).get_matches();
+    
+    if let Some(matches) = matches.subcommand_matches("run") {
+        let config_file = matches.value_of("config").unwrap();
+        let time = matches.value_of("time").unwrap();
+            println!("run config {}{}", config_file,time);
+    } else if let Some(matches) = matches.subcommand_matches("new") {
+        let output = matches.value_of("output").unwrap();
+        let username = matches.value_of("username").unwrap();
+        let password = matches.value_of("password").unwrap();
+            println!("run config {}{}{}", output,username,password);
+    } else {
+        eprintln!("Invalide arguments. Try <running-go --help> command for detail.")
+    }
+    
     let mut print = Print::new();
 
-    match run(&mut print) {
-        Ok(()) => print.info("Success!"),
-        Err(err) => print.error(&format!("Error occured: {:?}", err)),
-    }
+    // match run(&mut print) {
+    //     Ok(()) => print.info("Success!"),
+    //     Err(err) => print.error(&format!("Error occured: {:?}", err)),
+    // }
 }
 
-fn run(print: &mut Print) -> Result<(), Error> {
-    let API_KEY_CAPTCHA = "API KEY".into();
-    let API_KEY_BAIDU = "API KEY".into();
-
-    let device = Device {
-        imei: "".into(),
-        model: "Meizu Pro6 Plus".into(),
-        mac: "38:44:94:21:29:7".into(),
-        os_version: "6.0.0".into(),
-        user_agent: "Dalvik/2.1.0 (Linux; U; Android 6.0.0)".into(),
-        ..Default::default()
-    };
-
+fn run(start_time: u64, config: &Config,  print: &mut Print) -> Result<(), Error> {
     let user = User {
-        username: "username".into(),
-        password: "password".into(),
+        username: config.username,
+        password: config.password,
         ..Default::default()
     };
 
     let start_pos = GeoPoint {
-        lat: 23.04767,
-        lon: 113.380725,
+        lat: config.start_pos_lat,
+        lon: config.start_pos_lon,
     };
-
-    let sel_distance = 2000;
-    let start_time = 1521636213000;
 
     let start_pos = start_pos.offset(Vector::ORIGIN.fuzz(300.0));
     let flag = start_time - rand_near(30 * 60 * 1000, 5 * 60 * 1000) as u64;
@@ -85,11 +95,11 @@ fn run(print: &mut Print) -> Result<(), Error> {
 
     print.process("Fetch point");
 
-    let five_points = api.fetch_points(start_pos, sel_distance)?;
+    let five_points = api.fetch_points(start_pos, config.min_distance_meter)?;
 
     print.process("Plan route");
 
-    let route_plan = api.plan_route(start_pos, &five_points, sel_distance, &API_KEY_BAIDU)?;
+    let route_plan = api.plan_route(start_pos, &five_points, config.min_distance_meter, &API_KEY_BAIDU)?;
 
     let captcha_result = Retry::new(
         &mut || {
@@ -118,7 +128,7 @@ fn run(print: &mut Print) -> Result<(), Error> {
     let record = RunRecord::plan(
         flag,
         &uuid,
-        sel_distance,
+        config.min_distance_meter,
         &route_plan,
         &five_points,
         start_time,

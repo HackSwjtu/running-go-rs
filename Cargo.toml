@@ -1,5 +1,5 @@
 [package]
-name = "running-go-rs"
+name = "running-go"
 version = "0.1.0"
 authors = ["andylokandy <andylokandy@hotmail.com>"]
 
@@ -15,6 +15,10 @@ uuid = "0.6"
 maplit = "1.0"
 retry = "0.4"
 term = "0.5"
+clap = "2.31"
+serde = "1.0"
+serde_derive = "1.0"
+serde_ini = "0.1"
 
 [features]
-default = ["uuid/v4"]
+default = ["uuid/v4", "clap/yaml"]

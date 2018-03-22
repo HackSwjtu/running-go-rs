@@ -9,7 +9,7 @@ use md5;
 
 use crate::entities::*;
 use crate::utils::*;
-use crate::config::*;
+use crate::constant::*;
 use crate::error::Error;
 
 #[derive(Debug)]

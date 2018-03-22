@@ -1,6 +1,6 @@
 use json::JsonValue;
 
-use crate::config::*;
+use crate::constant::*;
 use crate::utils::*;
 
 #[derive(Debug)]

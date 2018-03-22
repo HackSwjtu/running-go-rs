@@ -1,23 +1,38 @@
-pub const APP_VERSION: &'static str = "2.0.0";
-pub const OS_TYPE: &'static str = "0";
-pub const MD5_KEY: &'static str = "05df15504f394eab8dd3ab8180006a83";
-pub const MD5_SIGN_SALT: &'static str = "&wh2016_swcampus";
-pub const MD5_SIGN_SALT_RUN: &'static str = "&ODJw#h03b_0EaV";
+use std::path::Path;
+use std::fs::File;
+use std::io::prelude::*;
+use serde_ini;
 
-pub const AVG_SPEED: f64 = 3.0;
-pub const SPEED_ERR: f64 = 1.0;
-pub const SPAMLE_TIME: f64 = 6.0;
-pub const SPAMLE_TIME_ERR: f64 = 1.0;
-pub const CALORIE: u64 = 200;
-pub const CALORIE_ERR: u64 = 70;
-pub const STEP_CNT_PER_10S: u64 = 15;
-pub const STEP_CNT_PER_10S_ERR: u64 = 4;
-pub const STEP_CNT_PER_MIN: u64 = 60;
-pub const STEP_CNT_PER_MIN_ERR: u64 = 10;
-pub const AVG_DIFF: f64 = 24.0;
-pub const AVG_DIFF_ERR: f64 = 10.0;
-pub const MIN_DIFF: f64 = 7.0;
-pub const MIN_DIFF_ERR: f64 = 3.0;
-pub const MAX_DIFF: f64 = 40.0;
-pub const MAX_DIFF_ERR: f64 = 15.0;
-pub const FUZZLE_ERR: f64 = 2.0;
+use crate::error::Error;
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct Config {
+    pub username: String,
+    pub password: String,
+    pub start_pos_lat: f64,
+    pub start_pos_lon: f64,
+    pub min_distance_meter: u64,
+    pub device_imei: String,
+    pub device_model: String,
+    pub device_mac: String,
+    pub device_os_version: String,
+}
+
+impl Config {
+    pub fn from_path(path:&Path) -> Result<Self, Error> {
+        let mut file = File::open(path)?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        Ok(serde_ini::from_str(&contents)?)
+    }
+
+    pub fn save(&self,path:&Path) -> Result<(), Error> {
+        let mut file = File::create(path)?;
+        serde_ini::to_writer(&mut file, self)?;
+        Ok(())
+    }
+
+    pub fn rand_device_info(&mut self) {
+        
+    }
+}
