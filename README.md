@@ -55,7 +55,7 @@ running-go -h
 2.
 
 ```
-release> running-go generate user/HanMeiMei --username 139xxxxxx32 --password ILoveLeLei --lat 23.123456 --lon 125.123456
+release> running-go new user/HanMeiMei --username 139xxxxxx32 --password ILoveLeLei --lat 23.123456 --lon 125.123456
     Done Parse argument
     Done Generate user config
 ```

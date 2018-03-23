@@ -3,7 +3,7 @@ version: "0.1.0"
 author: andylokandy <andylokandy@hotmail.com>
 about: Run by high technology
 subcommands:
-  - generate:
+  - new:
       about: Generate a user config file
       args:
           - output:
@@ -36,7 +36,7 @@ subcommands:
           - config:
               value_name: FILE
               required: true
-              help: User configuration file. Generate by "running-go generate" command.
+              help: User configuration file. Generate by "running-go new" command.
               takes_value: true
           - distance:
               short: d

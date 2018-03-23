@@ -64,7 +64,7 @@ fn parse_argument(print: &mut Print) -> Result<(), Error> {
     let matches = App::from_yaml(yaml).get_matches();
 
     match matches.subcommand() {
-        ("generate", Some(matches)) => {
+        ("new", Some(matches)) => {
             print.process("Parse argument");
 
             let username = matches.value_of("username")?.to_string();
