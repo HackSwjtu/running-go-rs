@@ -40,13 +40,11 @@ subcommands:
               takes_value: true
           - distance:
               short: d
-              long: distance
               value_name: DISTANCE_METER
               help: Sets distance for this record
               required: true
           -  time:  
               short: t
-              long: time
               value_name: '"YYYY/MM/DD hh::mm::ss"'
               required: true
               help: Sets time of activity record.
