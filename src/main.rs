@@ -38,6 +38,7 @@ use std::str::FromStr;
 use uuid::Uuid;
 use retry::Retry;
 use clap::App;
+use time::Duration;
 
 use crate::config::Config;
 use crate::entities::*;
@@ -90,7 +91,7 @@ fn parse_argument(print: &mut Print) -> Result<(), Error> {
 
             let time_template = "%Y/%m/%d %H:%M:%S";
             let start_time = time::strptime(matches.value_of("time")?, time_template)?;
-            let start_timestamp = start_time.to_utc().to_timespec().sec as u64 * 1000;
+            let start_timestamp = (start_time - Duration::hours(8)).to_timespec().sec as u64 * 1000;
 
             let duration = time::now() - start_time;
             if duration.num_days() > 3 {
@@ -106,8 +107,8 @@ fn parse_argument(print: &mut Print) -> Result<(), Error> {
             let distance = u64::from_str(matches.value_of("distance")?)?;
             if distance < SEL_DISTANCE {
                 return Err(Error::Config(format!(
-                    "Distance {} may not be less than {}",
-                    distance, SEL_DISTANCE
+                    "Distance may not be less than {}",
+                    SEL_DISTANCE
                 )));
             }
 

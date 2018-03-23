@@ -185,7 +185,7 @@ impl Api {
         });
 
         for p in (0..3)
-            .map(|_| start_pos.offset(Vector::ORIGIN.fuzz(500.0)))
+            .map(|_| start_pos.offset(Vector::ORIGIN.fuzz(300.0)))
             .chain(once(north_east))
         {
             orig = dest;
@@ -195,7 +195,7 @@ impl Api {
         }
 
         Ok(RoutePlan {
-            min_distance: distance + rand_near(150, 50),
+            min_distance: distance,
             min_points,
             route_points,
         })
