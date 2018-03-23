@@ -3,7 +3,6 @@
 #![feature(slice_concat_ext)]
 #![feature(crate_in_paths)]
 #![feature(match_default_bindings)]
-#![allow(non_snake_case)]
 
 extern crate base64;
 #[macro_use]
@@ -120,7 +119,6 @@ fn parse_argument(print: &mut Print) -> Result<(), Error> {
         }
         _ => {
             App::from_yaml(yaml).get_matches_from(&["", "-h"]);
-            // eprintln!("Invalid argument.\nTry \"running-go --help\".")},
         }
     }
 
@@ -158,6 +156,35 @@ fn run(start_time: u64, distance: u64, config: Config, print: &mut Print) -> Res
 
     api.login()?;
 
+    match upload(
+        &mut api,
+        start_pos,
+        start_time,
+        distance,
+        &uuid,
+        flag,
+        print,
+    ) {
+        Err(err) => print.error(&format!("Error occured: {:?}", err)),
+        _ => (),
+    }
+
+    print.process("Logout");
+
+    api.logout()?;
+
+    Ok(())
+}
+
+fn upload(
+    api: &mut Api,
+    start_pos: GeoPoint,
+    start_time: u64,
+    distance: u64,
+    uuid: &str,
+    flag: u64,
+    print: &mut Print,
+) -> Result<(), Error> {
     print.process("Fetch point");
 
     let five_points = api.fetch_points(start_pos)?;
@@ -195,10 +222,6 @@ fn run(start_time: u64, distance: u64, config: Config, print: &mut Print) -> Res
     print.process("Upload record");
 
     api.post_record(&record)?;
-
-    print.process("Logout");
-
-    api.logout()?;
 
     Ok(())
 }

@@ -45,7 +45,7 @@ impl GPSRecord {
             curr_pos = curr_pos
                 .step_toward(target_point, distance)
                 .fuzz(FUZZLE_ERR);
-                
+
             if curr_pos.distance_to(target_point) < CONFIRM_DISTANCE {
                 curr_point_idx += 1;
             }
