@@ -90,7 +90,7 @@ fn parse_argument(print: &mut Print) -> Result<(), Error> {
 
             let time_template = "%Y/%m/%d %H:%M:%S";
             let start_time = time::strptime(matches.value_of("time")?, time_template)?;
-            let start_timestamp = start_time.to_timespec().sec as u64 * 1000;
+            let start_timestamp = start_time.to_utc().to_timespec().sec as u64 * 1000;
 
             let duration = time::now() - start_time;
             if duration.num_days() > 3 {

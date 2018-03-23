@@ -73,10 +73,14 @@ impl RunRecord {
         );
 
         let sum_time = (self.end_time - self.start_time) / 1000;
+        let calorie = rand_near(
+            CALORIE_PER_KM * self.distance / 1000,
+            CALORIE_PER_KM_ERR * self.distance / 1000,
+        );
 
         let mut json = object! {
             "avgStepFreq" => rand_near(STEP_CNT_PER_MIN, STEP_CNT_PER_MIN_ERR),
-            "calorie" => rand_near(CALORIE, CALORIE_ERR),
+            "calorie" => calorie,
             "complete" => true,
             "getPrize" => false,
             "selDistance" => SEL_DISTANCE,
