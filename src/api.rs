@@ -1,6 +1,5 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::str::FromStr;
-use std::iter::once;
 // use reqwest;
 use reqwest::Client;
 use reqwest::header::Headers;
@@ -179,20 +178,7 @@ impl Api {
 
         let min_points = route_points.len() as u64;
 
-        let north_east = start_pos.offset(Vector {
-            x: 10000.0,
-            y: 10000.0,
-        });
-
-        for p in (0..3)
-            .map(|_| start_pos.offset(Vector::ORIGIN.fuzz(300.0)))
-            .chain(once(north_east))
-        {
-            orig = dest;
-            dest = p;
-
-            route_points.extend(self.baidu_get_path(orig, dest, apikey)?.iter());
-        }
+        route_points.extend(self.baidu_get_path(dest, start_pos, apikey)?.iter());
 
         Ok(RoutePlan {
             min_distance: distance,
