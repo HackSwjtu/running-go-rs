@@ -39,11 +39,19 @@ impl GPSRecord {
             let duration = rand_near_f64(SPAMLE_TIME * 1000.0, SPAMLE_TIME_ERR * 1000.0);
             let distance = speed * duration / 1000.0;
 
-            let target_point = vectors[curr_point_idx];
+            let this_point = vectors[curr_point_idx];
+            let next_point = vectors[curr_point_idx+  1];
+            let target_point = if curr_pos.distance_to(this_point) < CONFIRM_DISTANCE {
+                next_point
+            } else {
+                this_point
+            };
+
             curr_pos = curr_pos
                 .step_toward(target_point, distance)
                 .fuzz(FUZZLE_ERR);
-            if curr_pos.distance_to(target_point) < 5.0 {
+                
+            if curr_pos.distance_to(target_point) < CONFIRM_DISTANCE {
                 curr_point_idx += 1;
             }
 
