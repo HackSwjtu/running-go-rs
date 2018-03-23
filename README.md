@@ -17,6 +17,14 @@ rustup override set nightly
 3.
 
 ```
+http://lbsyun.baidu.com/apiconsole/key?application=key
+
+http://www.25531.com/
+```
+
+4.
+
+```
 APIKEY x2
 
 =>
@@ -24,13 +32,13 @@ APIKEY x2
 ./running-go/src/constant.rs
 ```
 
-3.
+5.
 
 ```
 running-go> cargo build --release
 ```
 
-4.
+6.
 
 ```
 running-go> cd target/release
