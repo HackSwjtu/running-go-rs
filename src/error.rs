@@ -23,20 +23,20 @@ impl From<NoneError> for Error {
 }
 
 impl From<ParseFloatError> for Error {
-    fn from(_: ParseFloatError) -> Self {
-        Error::Format("invalid float".into())
+    fn from(error: ParseFloatError) -> Self {
+        Error::Format(format!("{}", error))
     }
 }
 
 impl From<ParseIntError> for Error {
-    fn from(_: ParseIntError) -> Self {
-        Error::Format("invalid interger".into())
+    fn from(error: ParseIntError) -> Self {
+        Error::Format(format!("{}", error))
     }
 }
 
 impl From<time::ParseError> for Error {
-    fn from(_: time::ParseError) -> Self {
-        Error::Format("invalid time format".into())
+    fn from(error: time::ParseError) -> Self {
+        Error::Format(format!("{}", error))
     }
 }
 impl From<reqwest::Error> for Error {
