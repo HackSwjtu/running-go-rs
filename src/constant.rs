@@ -7,6 +7,7 @@ pub const MD5_SIGN_SALT_RUN: &'static str = "&ODJw#h03b_0EaV";
 pub const SEL_DISTANCE: u64 = 2000;
 
 pub const AVG_SPEED: f64 = 3.0;
+pub const AVG_SPEED_ERR: f64 = 0.8;
 pub const SPEED_ERR: f64 = 1.0;
 pub const SPAMLE_TIME: f64 = 6.0;
 pub const SPAMLE_TIME_ERR: f64 = 1.0;

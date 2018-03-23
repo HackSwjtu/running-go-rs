@@ -20,6 +20,7 @@ impl GPSRecord {
     pub fn plan(start_time: u64, route_plan: &RoutePlan) -> Vec<Self> {
         let mut records = Vec::new();
         let start_pos = route_plan.route_points.first().unwrap().clone();
+        let avg_speed = rand_near_f64(AVG_SPEED, AVG_SPEED_ERR);
         let vectors: Vec<Vector> = route_plan
             .route_points
             .iter()
@@ -35,7 +36,7 @@ impl GPSRecord {
         while sum_dis < route_plan.min_distance as f64
             || curr_point_idx < route_plan.min_points as usize
         {
-            let speed = rand_near_f64(AVG_SPEED, SPEED_ERR);
+            let speed = rand_near_f64(avg_speed, SPEED_ERR);
             let duration = rand_near_f64(SPAMLE_TIME * 1000.0, SPAMLE_TIME_ERR * 1000.0);
             let distance = speed * duration / 1000.0;
 

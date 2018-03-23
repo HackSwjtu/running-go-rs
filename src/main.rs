@@ -95,18 +95,18 @@ fn parse_argument(print: &mut Print) -> Result<(), Error> {
 
             let duration = time::now() - start_time;
             if duration.num_days() > 3 {
-                return Err(Error::Api(
+                return Err(Error::Config(
                     "Date cannot be earlier than three days ago".into(),
                 ));
             }
 
             if duration.num_days() < 0 {
-                return Err(Error::Api("Date cannot be later than now".into()));
+                return Err(Error::Config("Date cannot be later than now".into()));
             }
 
             let distance = u64::from_str(matches.value_of("distance")?)?;
             if distance < SEL_DISTANCE {
-                return Err(Error::Api(format!(
+                return Err(Error::Config(format!(
                     "Distance {} may not be less than {}",
                     distance, SEL_DISTANCE
                 )));
@@ -175,7 +175,7 @@ fn run(start_time: u64, distance: u64, config: Config, print: &mut Print) -> Res
             let res = api.anti_test(&captcha, API_KEY_CAPTCHA);
 
             if res.is_err() {
-                print.error("Captcha wrong");
+                print.error(&format!("{:?}", res));
             }
 
             res
