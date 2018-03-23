@@ -1,5 +1,6 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::str::FromStr;
+use std::iter::once;
 // use reqwest;
 use reqwest::Client;
 use reqwest::header::Headers;
@@ -166,11 +167,6 @@ impl Api {
     ) -> Result<RoutePlan, Error> {
         let mut route_points = vec![start_pos];
 
-        let north_east = start_pos.offset(Vector {
-            x: 10000.0,
-            y: 10000.0,
-        });
-
         let mut orig;
         let mut dest = start_pos;
 
@@ -183,7 +179,20 @@ impl Api {
 
         let min_points = route_points.len() as u64;
 
-        route_points.extend(self.baidu_get_path(dest, north_east, apikey)?.iter());
+        let north_east = start_pos.offset(Vector {
+            x: 10000.0,
+            y: 10000.0,
+        });
+
+        for p in (0..3)
+            .map(|_| start_pos.offset(Vector::ORIGIN.fuzz(500.0)))
+            .chain(once(north_east))
+        {
+            orig = dest;
+            dest = p;
+
+            route_points.extend(self.baidu_get_path(orig, dest, apikey)?.iter());
+        }
 
         Ok(RoutePlan {
             min_distance: distance + rand_near(150, 50),
