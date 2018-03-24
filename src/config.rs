@@ -56,10 +56,10 @@ impl Config {
             "Meizu Pro6",
             "Meizu Pro6 Plus",
             "Meizu Pro7",
-            "OnePlus 3",
-            "OnePlus 3T",
-            "OnePlus 5",
-            "OnePlus 5T",
+            "ONEPLUS A3000",
+            "ONEPLUS A3010",
+            "ONEPLUS A5000",
+            "ONEPLUS A5010",
         ];
         let os_versions = [
             "6.0.0", "6.0.1", "6.0.2", "6.1.0", "6.1.1", "7.0.0", "7.0.1", "7.1.0", "7.1.1",
