@@ -2,6 +2,7 @@
 #![feature(nll)]
 #![feature(slice_concat_ext)]
 #![feature(crate_in_paths)]
+#![feature(range_contains)]
 #![feature(match_default_bindings)]
 
 extern crate base64;
@@ -72,6 +73,13 @@ fn parse_argument(print: &mut Print) -> Result<(), Error> {
             let start_pos_lat = f64::from_str(matches.value_of("lat")?)?;
             let start_pos_lon = f64::from_str(matches.value_of("lon")?)?;
             let output = matches.value_of("output")?;
+
+            if !(-90.0..90.0).contains(start_pos_lat) {
+                return Err(Error::Config("Invalid latitude".into()));
+            }
+            if !(-90.0..90.0).contains(start_pos_lon) {
+                return Err(Error::Config("Invalid longitude".into()));
+            }
 
             let mut config = Config {
                 username,

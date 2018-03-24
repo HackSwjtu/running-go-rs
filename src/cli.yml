@@ -45,7 +45,7 @@ subcommands:
               required: true
           -  time:  
               short: t
-              value_name: '"YYYY/MM/DD hh::mm::ss"'
+              value_name: '"YYYY/MM/DD hh:mm:ss"'
               required: true
               help: Sets time of activity record.
               takes_value: true

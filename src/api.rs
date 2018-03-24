@@ -174,6 +174,7 @@ impl Api {
             dest = p;
 
             route_points.extend(self.baidu_get_path(orig, dest, apikey)?.iter());
+            route_points.push(p);
         }
 
         let min_points = route_points.len() as u64;
