@@ -77,7 +77,7 @@ fn parse_argument(print: &mut Print) -> Result<(), Error> {
             if !(-90.0..90.0).contains(start_pos_lat) {
                 return Err(Error::Config("Invalid latitude".into()));
             }
-            if !(-90.0..90.0).contains(start_pos_lon) {
+            if !(-90.0..180.0).contains(start_pos_lon) {
                 return Err(Error::Config("Invalid longitude".into()));
             }
 
