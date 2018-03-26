@@ -213,10 +213,7 @@ impl Api {
         let mut route_points = Vec::new();
 
         for step in res["result"]["routes"][0]["steps"].members() {
-            let path = step["path"].as_str()?;
-            let points = path.split(";");
-
-            for point in points {
+            for point in step["path"].as_str()?.split(";") {
                 let mut lat_lon = point.split(",");
                 let lon = f64::from_str(lat_lon.next()?)?;
                 let lat = f64::from_str(lat_lon.next()?)?;

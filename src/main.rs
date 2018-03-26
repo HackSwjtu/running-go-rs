@@ -155,7 +155,7 @@ fn run(start_time: u64, distance: u64, config: Config, print: &mut Print) -> Res
         lon: config.start_pos_lon,
     };
 
-    let start_pos = start_pos.offset(Vector::ORIGIN.fuzz(300.0));
+    let start_pos = start_pos.offset(Vector::ORIGIN.fuzz(START_POS_FUZZ));
     let flag = start_time - rand_near(30 * 60 * 1000, 5 * 60 * 1000);
     let uuid = Uuid::new_v4().hyphenated().to_string();
 

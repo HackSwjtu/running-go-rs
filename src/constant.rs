@@ -23,7 +23,8 @@ pub const MIN_DIFF: f64 = 7.0;
 pub const MIN_DIFF_ERR: f64 = 3.0;
 pub const MAX_DIFF: f64 = 40.0;
 pub const MAX_DIFF_ERR: f64 = 15.0;
-pub const FUZZLE_ERR: f64 = 2.0;
+pub const START_POS_FUZZ: f64 = 100.0;
+pub const ROUTE_POINT_FUZZ: f64 = 1.0;
 pub const CONFIRM_DISTANCE: f64 = 10.0;
 
 pub const API_KEY_CAPTCHA: &'static str = "API KEY";
