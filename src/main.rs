@@ -74,10 +74,10 @@ fn parse_argument(print: &mut Print) -> Result<(), Error> {
             let start_pos_lon = f64::from_str(matches.value_of("lon")?)?;
             let output = matches.value_of("output")?;
 
-            if !(-90.0..90.0).contains(start_pos_lat) {
+            if !(0.0..60.0).contains(start_pos_lat) {
                 return Err(Error::Config("Invalid latitude".into()));
             }
-            if !(-180.0..180.0).contains(start_pos_lon) {
+            if !(75.0..140.0).contains(start_pos_lon) {
                 return Err(Error::Config("Invalid longitude".into()));
             }
 
